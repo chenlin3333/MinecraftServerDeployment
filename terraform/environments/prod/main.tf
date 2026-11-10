@@ -19,3 +19,12 @@ terraform {
 provider "aws" {
   region = "us-east-1"
 }
+
+resource "aws_instance" "minecraft_server" {
+  ami           = data.aws_ami.aws_linux_ami.id 
+  instance_type = "t4g.medium"
+
+  tags = {
+    Name = "Minecraft-Server-EC2"
+  }
+}
