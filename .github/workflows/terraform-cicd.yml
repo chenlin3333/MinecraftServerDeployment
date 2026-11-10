@@ -30,7 +30,7 @@ jobs:
     defaults:
       run:
         working-directory: terraform/environments/prod
-        
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.17.1"
-          cli_config_credentials_token: ${{ secrets.TF_HCP_API_KEY }}
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
       
 
       - name: Terraform Init and Format Check
