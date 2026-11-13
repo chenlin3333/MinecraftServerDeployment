@@ -31,6 +31,8 @@ resource "aws_instance" "minecraft_server" {
     max_ram_size         = var.max_ram_size
   })
 
+  user_data_replace_on_change = true
+
   tags = {
     Name = "Minecraft-Server-EC2"
   }
