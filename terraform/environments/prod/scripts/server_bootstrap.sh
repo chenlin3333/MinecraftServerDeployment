@@ -5,12 +5,24 @@ export MINECRAFT_SERVER_URL="${minecraft_server_url}"
 export INITIAL_RAM_SIZE="${initial_ram_size}"
 export MAX_RAM_SIZE="${max_ram_size}"
 
+mount_EBS_volume() {
+    sudo mkdir -p /mnt/minecraft/server
+    sudo adduser --system --group minecraft-user --home /mnt/minecraft/server minecraft-user
+
+    # Wait for the EBS device to be available
+    while [ ! -b /dev/sdf ]; do
+        sleep 1
+    done
+    sudo mkfs -t ext4 /dev/sdf
+    sudo mount /dev/sdf /mnt/minecraft/server
+}
+
+mount_EBS_volume
 sudo dnf install -y java-"$JAVA_VERSION"-amazon-corretto-headless
 
 curl -o server.jar "$MINECRAFT_SERVER_URL"
-sudo mkdir -p /opt/minecraft/server
-sudo mv server.jar /opt/minecraft/server/
-sudo chown -R ec2-user:ec2-user /opt/minecraft
+sudo mv server.jar /mnt/minecraft/server/
+sudo chown -R minecraft-user:minecraft-user /mnt/minecraft
 
 cat <<EOF > /etc/systemd/system/minecraft_server.service
 [Unit]
@@ -18,8 +30,8 @@ Description=Minecraft Server
 After=network.target
 
 [Service]
-User=ec2-user
-WorkingDirectory=/opt/minecraft/server
+User=minecraft-user
+WorkingDirectory=/mnt/minecraft/server
 ExecStart=/usr/bin/java -Xmx$${MAX_RAM_SIZE} -Xms$${INITIAL_RAM_SIZE} -jar server.jar nogui
 Restart=on-failure
 
@@ -32,7 +44,7 @@ sudo systemctl enable --now minecraft_server
 sudo systemctl start minecraft_server
 
 # wait for the eula agreement file to be created
-while [ ! -f /opt/minecraft/server/eula.txt ]; do
+while [ ! -f /mnt/minecraft/server/eula.txt ]; do
   sleep 1
 done
 
