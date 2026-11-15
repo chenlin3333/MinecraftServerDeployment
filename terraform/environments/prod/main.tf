@@ -16,13 +16,11 @@ terraform {
     }
   }
 }
-provider "aws" {
-  region = "us-east-1"
-}
 
 resource "aws_instance" "minecraft_server" {
-  ami           = data.aws_ami.aws_linux_ami.id
-  instance_type = "t4g.medium"
+  ami               = data.aws_ami.aws_linux_ami.id
+  instance_type     = "t4g.medium"
+  availability_zone = var.availability_zone
 
   user_data = templatefile("${path.module}/scripts/server_bootstrap.sh", {
     java_version         = var.java_version
@@ -32,6 +30,8 @@ resource "aws_instance" "minecraft_server" {
   })
 
   user_data_replace_on_change = true
+
+  subnet_id = aws_subnet.public_subnet.id
 
   vpc_security_group_ids = [
     aws_security_group.minecraft_server_sg.id
@@ -44,8 +44,8 @@ resource "aws_instance" "minecraft_server" {
 
 resource "aws_ebs_volume" "minecraft_server_storage" {
   availability_zone = aws_instance.minecraft_server.availability_zone
-  size             = 20
-  type             = "gp3"
+  size              = var.storage_size
+  type              = "gp3"
 
   tags = {
     Name = "minecraft-server-torage"
@@ -59,7 +59,7 @@ resource "aws_volume_attachment" "minecraft_server_attachment" {
 }
 
 resource "aws_vpc" "minecraft_server_vpc" {
-  cidr_block           = "10.0.0.0/16"
+  cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
@@ -68,23 +68,52 @@ resource "aws_vpc" "minecraft_server_vpc" {
   }
 }
 
-resource "aws_security_group" "minecraft_server_sg" {
-  name = "minecraft-server-security-group"
+resource "aws_subnet" "public_subnet" {
+  vpc_id                  = aws_vpc.minecraft_server_vpc.id
+  cidr_block              = var.public_subnet_cidr
+  availability_zone       = var.availability_zone
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-subnet"
+  }
+}
+
+resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.minecraft_server_vpc.id
 
-  ingress { 
-    description = "Allow players to connect to the server listening on port 25565"
-    from_port = 25565
-    to_port = 25565
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  tags = {
+    Name = "internet-gateway"
+  }
+}
+
+resource "aws_route_table" "public_route_table" {
+  vpc_id = aws_vpc.minecraft_server_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
   }
 
+  tags = {
+    Name = "public-route-table"
+  }
+}
+
+resource "aws_route_table_association" "public_rt_association" {
+  subnet_id      = aws_subnet.public_subnet.id
+  route_table_id = aws_route_table.public_route_table.id
+}
+
+resource "aws_security_group" "minecraft_server_sg" {
+  name   = "minecraft-server-security-group"
+  vpc_id = aws_vpc.minecraft_server_vpc.id
+
   ingress {
-    description = "Allow SSH access for debugging only"
-    from_port = 22
-    to_port = 22
-    protocol = "tcp"
-    cidr_blocks = ["8.9.95.96/32"]
+    description = "Allow players to connect to the server listening on port 25565"
+    from_port   = 25565
+    to_port     = 25565
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }

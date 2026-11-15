@@ -21,3 +21,27 @@ variable "max_ram_size" {
   type        = string
   default     = "3G"
 }
+
+variable "vpc_cidr" {
+  description = "The range of IP addresses for my VPC"
+  type        = string
+  default     = "10.0.0.0/24"
+}
+
+variable "availability_zone" {
+  description = "The AZ to host the minecraft server"
+  type        = string
+  default     = "us-east-1a"
+}
+
+variable "public_subnet_cidr" {
+  description = "The range of IP addresses for my public subnet in the VPC"
+  type        = string
+  default     = "10.0.0.0/24"
+}
+
+variable "storage_size" {
+  description = "The size in GB of the EBS volume for the minecraft server"
+  type        = number
+  default     = 20
+}
