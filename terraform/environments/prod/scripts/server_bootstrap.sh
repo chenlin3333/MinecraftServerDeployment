@@ -8,7 +8,7 @@ export MAX_RAM_SIZE="${max_ram_size}"
 mount_EBS_volume() {
     sudo mkdir -p /mnt/minecraft/server
     sudo groupadd minecraft-user
-    sudo adduser --system --group minecraft-user --home /mnt/minecraft/server minecraft-user
+    sudo adduser --system -g minecraft-user --home /mnt/minecraft/server minecraft-user
 
     # Wait for the EBS device to be available
     while [ ! -b /dev/sdf ]; do
@@ -49,6 +49,6 @@ while [ ! -f /mnt/minecraft/server/eula.txt ]; do
   sleep 1
 done
 
-sed -i 's/eula=false/eula=true/' /opt/minecraft/server/eula.txt
+sed -i 's/eula=false/eula=true/' /mnt/minecraft/server/eula.txt
 sudo systemctl restart minecraft_server
 
