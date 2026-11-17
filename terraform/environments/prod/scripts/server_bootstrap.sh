@@ -7,6 +7,7 @@ export MAX_RAM_SIZE="${max_ram_size}"
 
 mount_EBS_volume() {
     sudo mkdir -p /mnt/minecraft/server
+    sudo groupadd minecraft-user
     sudo adduser --system --group minecraft-user --home /mnt/minecraft/server minecraft-user
 
     # Wait for the EBS device to be available
@@ -22,7 +23,7 @@ sudo dnf install -y java-"$JAVA_VERSION"-amazon-corretto-headless
 
 curl -o server.jar "$MINECRAFT_SERVER_URL"
 sudo mv server.jar /mnt/minecraft/server/
-sudo chown -R minecraft-user:minecraft-user /mnt/minecraft
+sudo chown -R minecraft-user:minecraft-user /mnt/minecraft/server
 
 cat <<EOF > /etc/systemd/system/minecraft_server.service
 [Unit]
