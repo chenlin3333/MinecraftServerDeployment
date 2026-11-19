@@ -50,5 +50,6 @@ while [ ! -f /mnt/minecraft/server/eula.txt ]; do
 done
 
 sed -i 's/eula=false/eula=true/' /mnt/minecraft/server/eula.txt
+sed -i 's/white-list=true/white-list=false/' /mnt/minecraft/server/server.properties
 sudo systemctl restart minecraft_server
 
