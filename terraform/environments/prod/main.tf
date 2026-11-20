@@ -17,6 +17,10 @@ terraform {
   }
 }
 
+
+/*
+  Compute and Storage Configuration
+*/
 resource "aws_instance" "minecraft_server" {
   ami               = data.aws_ami.aws_linux_ami.id
   instance_type     = "t4g.medium"
@@ -68,6 +72,68 @@ resource "aws_vpc" "minecraft_server_vpc" {
     Name = "minecraft-server-vpc"
   }
 }
+
+resource "aws_iam_role" "dlm_role" {
+  name = "minecraft-dlm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "dlm.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "dlm_policy" {
+  role       = aws_iam_role.dlm_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
+}
+
+resource "aws_dlm_lifecycle_policy" "minecraft_backup" {
+  description        = "Daily Minecraft EBS backups"
+  execution_role_arn = aws_iam_role.dlm_role.arn
+  state              = "ENABLED"
+
+  policy_details {
+    resource_types = ["VOLUME"]
+
+    target_tags = {
+      Backup = "true"
+    }
+
+    schedule {
+      name = "Daily Backups"
+
+      create_rule {
+        interval      = 24
+        interval_unit = "HOURS"
+        times         = ["03:00"]
+      }
+
+      retain_rule {
+        count = 7
+      }
+
+      tags_to_add = {
+        BackupType = "Minecraft"
+      }
+
+      copy_tags = true
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.dlm_policy
+  ]
+}
+
+/*
+  Networking configurations
+*/
 
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.minecraft_server_vpc.id
@@ -135,60 +201,42 @@ resource "aws_security_group" "minecraft_server_sg" {
   }
 }
 
-resource "aws_iam_role" "dlm_role" {
-  name = "minecraft-dlm-role"
+resource "aws_eip" "minecraft_server_eip" {
+  domain = "vpc"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Service = "dlm.amazonaws.com"
-      }
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "dlm_policy" {
-  role       = aws_iam_role.dlm_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
-}
-
-resource "aws_dlm_lifecycle_policy" "minecraft_backup" {
-  description        = "Daily Minecraft EBS backups"
-  execution_role_arn = aws_iam_role.dlm_role.arn
-  state              = "ENABLED"
-
-  policy_details {
-    resource_types = ["VOLUME"]
-
-    target_tags = {
-      Backup = "true"
-    }
-
-    schedule {
-      name = "Daily Backups"
-
-      create_rule {
-        interval      = 24
-        interval_unit = "HOURS"
-        times         = ["03:00"]
-      }
-
-      retain_rule {
-        count = 7
-      }
-
-      tags_to_add = {
-        BackupType = "Minecraft"
-      }
-
-      copy_tags = true
-    }
+  tags = {
+    Name = "minecraft-server-eip"
   }
+}
 
-  depends_on = [
-    aws_iam_role_policy_attachment.dlm_policy
+resource "aws_eip_association" "minecraft_eip_association" {
+  instance_id   = aws_instance.minecraft_server.id
+  allocation_id = aws_eip.minecraft_server_eip.id
+}
+
+resource "aws_route53_record" "minecraft_a_record" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "chen.awsminecraft.com"
+  type    = "A"
+  ttl     = 300
+
+  records = [aws_eip.minecraft_server_eip.public_ip]
+}
+
+resource "aws_route53_record" "minecraft_dns_record" {
+  zone_id = aws_route53_zone.main.zone_id
+  name    = "_minecraft._tcp.chen.awsminecraft.com"
+  type    = "SRV"
+  ttl     = 300
+
+  records = [
+    "0 5 25565 ${aws_route53_record.minecraft_a_record.name}"
   ]
+}
+resource "aws_route53_zone" "main" {
+  name = "awsminecraft.com"
+
+  tags = {
+    Name = "main-hosted-zone"
+  }
 }
