@@ -1,5 +1,5 @@
 terraform {
-  required_version = "1.17.1"
+  required_version = "1.17.2"
 
   cloud {
     organization = "MinecraftServerDeployment"
@@ -212,31 +212,4 @@ resource "aws_eip" "minecraft_server_eip" {
 resource "aws_eip_association" "minecraft_eip_association" {
   instance_id   = aws_instance.minecraft_server.id
   allocation_id = aws_eip.minecraft_server_eip.id
-}
-
-resource "aws_route53_record" "minecraft_a_record" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "chen.awsminecraft.com"
-  type    = "A"
-  ttl     = 300
-
-  records = [aws_eip.minecraft_server_eip.public_ip]
-}
-
-resource "aws_route53_record" "minecraft_dns_record" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "_minecraft._tcp.chen.awsminecraft.com"
-  type    = "SRV"
-  ttl     = 300
-
-  records = [
-    "0 5 25565 ${aws_route53_record.minecraft_a_record.name}"
-  ]
-}
-resource "aws_route53_zone" "main" {
-  name = "awsminecraft.com"
-
-  tags = {
-    Name = "main-hosted-zone"
-  }
 }
