@@ -1,12 +1,13 @@
 import time
 import subprocess
 from mcstatus import JavaServer
+import os
 
-SERVER_ADDRESS = "TBD"
-IDLE_TIMEOUT = "TBD"
-CHECK_INTERVAL = 60
-INSTANCE_ID = "TBD"
-REGION = "TBD"
+SERVER_ADDRESS = os.getenv("SERVER_ADDRESS")
+IDLE_TIMEOUT = int(os.getenv("IDLE_TIMEOUT")) * 60
+CHECK_INTERVAL = 60 #seconds
+INSTANCE_ID = os.getenv("INSTANCE_ID")
+REGION = os.getenv("REGION")
 empty_since = None
 
 server = JavaServer(SERVER_ADDRESS)

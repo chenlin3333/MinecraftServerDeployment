@@ -45,3 +45,9 @@ variable "storage_size" {
   type        = number
   default     = 20
 }
+
+variable "idle_timeout" {
+  description = "How timeout in minutes the minecraft server can be empty until it is closed"
+  type        = number
+  default     = 15
+}
