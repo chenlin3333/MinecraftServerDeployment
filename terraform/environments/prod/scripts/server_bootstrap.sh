@@ -18,8 +18,14 @@ mount_EBS_volume() {
     sudo mount /dev/sdf /mnt/minecraft/server
 }
 
+install_dependencies() {
+    sudo dnf install -y java-"$JAVA_VERSION"-amazon-corretto-headless
+    sudo dnf install python3-pip -y
+    pip3 install mcstatus
+}
+
+install_dependencies
 mount_EBS_volume
-sudo dnf install -y java-"$JAVA_VERSION"-amazon-corretto-headless
 
 curl -o server.jar "$MINECRAFT_SERVER_URL"
 sudo mv server.jar /mnt/minecraft/server/

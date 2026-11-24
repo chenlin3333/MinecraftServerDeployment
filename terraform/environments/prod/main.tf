@@ -213,3 +213,9 @@ resource "aws_eip_association" "minecraft_eip_association" {
   instance_id   = aws_instance.minecraft_server.id
   allocation_id = aws_eip.minecraft_server_eip.id
 }
+
+/*
+  Server State Infrastructure
+*/
+
+
