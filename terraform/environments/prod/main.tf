@@ -32,7 +32,7 @@ resource "aws_instance" "minecraft_server" {
     initial_ram_size     = var.initial_ram_size
     max_ram_size         = var.max_ram_size
     idle_timeout         = var.idle_timeout
-    server_address            = aws_eip.minecraft_server_eip.public_ip
+    server_address       = aws_eip.minecraft_server_eip.public_ip
     region               = data.aws_region.current.name
     idle_monitor_script  = file("${path.module}/scripts/idle_monitor.py")
   })
