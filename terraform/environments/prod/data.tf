@@ -17,3 +17,5 @@ data "aws_ami" "aws_linux_ami" {
     values = ["hvm"]
   }
 }
+
+data "aws_region" "current" {}
