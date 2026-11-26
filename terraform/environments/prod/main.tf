@@ -22,9 +22,10 @@ terraform {
   Compute and Storage Configuration
 */
 resource "aws_instance" "minecraft_server" {
-  ami               = data.aws_ami.aws_linux_ami.id
-  instance_type     = "t4g.medium"
-  availability_zone = var.availability_zone
+  ami                  = data.aws_ami.aws_linux_ami.id
+  instance_type        = "t4g.medium"
+  availability_zone    = var.availability_zone
+  iam_instance_profile = aws_iam_instance_profile.ec2_self_stop_profile.name
 
   user_data = templatefile("${path.module}/scripts/server_bootstrap.sh", {
     java_version         = var.java_version
@@ -49,6 +50,56 @@ resource "aws_instance" "minecraft_server" {
     Name = "Minecraft-Server-EC2"
   }
 }
+
+resource "aws_iam_role" "ec2_self_stop_role" {
+  name = "ec2-self-stop-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "ec2_stop_policy" {
+  name        = "ec2-stop-instances-policy"
+  description = "Allows EC2 instance to stop instances"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "AllowStopInstances"
+        Effect   = "Allow"
+        Action   = "ec2:StopInstances"
+        Resource = "arn:aws:ec2:*:*:instance/*"
+        Condition = {
+          StringEquals = {
+            "ec2:ResourceTag/Name" = "Minecraft-Server-EC2"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_stop_policy" {
+  role       = aws_iam_role.ec2_self_stop_role.name
+  policy_arn = aws_iam_policy.ec2_stop_policy.arn
+}
+
+resource "aws_iam_instance_profile" "ec2_self_stop_profile" {
+  name = "ec2-self-stop-profile"
+  role = aws_iam_role.ec2_self_stop_role.name
+}
+
 
 resource "aws_ebs_volume" "minecraft_server_storage" {
   availability_zone = aws_instance.minecraft_server.availability_zone

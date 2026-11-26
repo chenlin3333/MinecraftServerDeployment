@@ -10,6 +10,13 @@ INSTANCE_ID = os.getenv("INSTANCE_ID")
 REGION = os.getenv("REGION")
 empty_since = None
 
+print(f"Starting idle monitor for server at {SERVER_ADDRESS}")
+print(f"Idle timeout set to {IDLE_TIMEOUT} seconds")
+print(f"Check interval set to {CHECK_INTERVAL} seconds")
+print(f"Instance ID set to {INSTANCE_ID}")
+print(f"Region set to {REGION}")
+print("Idle monitor initialized.")
+
 server = JavaServer(SERVER_ADDRESS)
 
 while True:
@@ -29,7 +36,6 @@ while True:
             if idle_time >= IDLE_TIMEOUT:
                 print(f"IDLE for {IDLE_TIMEOUT} seconds. Shutting down the server.")
                 
-                subprocess.run(["systemctl", "stop", "minecraft"])
                 subprocess.run(["aws", "ec2", "stop-instances", "--region", REGION, "--instance-ids", INSTANCE_ID])
 
                 break

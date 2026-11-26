@@ -34,7 +34,8 @@ EOF
 install_dependencies
 mount_EBS_volume
 
-metadata_token=$(curl -X PUT "http://169.254.169" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" -s)
+metadata_token=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 export INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $metadata_token" -s http://169.254.169.254/latest/meta-data/instance-id)
 curl -o server.jar "$MINECRAFT_SERVER_URL"
 sudo mv server.jar /mnt/minecraft/server/
