@@ -5,7 +5,7 @@ export MINECRAFT_SERVER_URL="${minecraft_server_url}"
 export INITIAL_RAM_SIZE="${initial_ram_size}"
 export MAX_RAM_SIZE="${max_ram_size}"
 export IDLE_TIMEOUT="${idle_timeout}"
-export SERVER_ADDRESS="${server_address}:25565"
+export SERVER_ADDRESS="${server_address}"
 export REGION="${region}"
 
 mount_EBS_volume() {

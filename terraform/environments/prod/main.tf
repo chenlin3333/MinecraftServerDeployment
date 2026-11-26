@@ -21,6 +21,23 @@ terraform {
 /*
   Compute and Storage Configuration
 */
+
+resource "aws_instance" "server_proxy" {
+  ami = data.aws_ami.aws_linux_ami.id
+  instance_type = "t4g.nano"
+  availability_zone = var.availability_zone
+
+  subnet_id = aws_subnet.public_subnet.id
+
+  vpc_security_group_ids = [
+    aws_security_group.server_proxy_sg.id
+  ]
+
+  tags = {
+    Name = "Server-Proxy-EC2"
+  }
+}
+
 resource "aws_instance" "minecraft_server" {
   ami                  = data.aws_ami.aws_linux_ami.id
   instance_type        = "t4g.medium"
@@ -232,6 +249,35 @@ resource "aws_security_group" "minecraft_server_sg" {
   vpc_id = aws_vpc.minecraft_server_vpc.id
 
   ingress {
+    description = "Allow minecraft traffic from proxy"
+    from_port   = 25565
+    to_port     = 25565
+    protocol    = "tcp"
+    security_groups = [aws_security_group.server_proxy_sg.id]
+  }
+
+  ingress {
+    description = "Allow SSH access for debugging only"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Allow outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "server_proxy_sg" {
+  name   = "server-proxy-security-group"
+  vpc_id = aws_vpc.minecraft_server_vpc.id
+
+  ingress {
     description = "Allow players to connect to the server listening on port 25565"
     from_port   = 25565
     to_port     = 25565
@@ -265,12 +311,8 @@ resource "aws_eip" "minecraft_server_eip" {
 }
 
 resource "aws_eip_association" "minecraft_eip_association" {
-  instance_id   = aws_instance.minecraft_server.id
+  instance_id   = aws_instance.server_proxy.id
   allocation_id = aws_eip.minecraft_server_eip.id
 }
-
-/*
-  Server State Infrastructure
-*/
 
 
