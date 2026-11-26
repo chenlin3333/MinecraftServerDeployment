@@ -26,8 +26,8 @@ install_dependencies() {
     sudo dnf install python3-pip -y
     pip3 install mcstatus
     cat <<EOF > /opt/idle_monitor.py
-    ${idle_monitor_script}
-    EOF
+${idle_monitor_script}
+EOF
     chmod +x /opt/idle_monitor.py
 }
 
@@ -55,7 +55,7 @@ Restart=on-failure
 WantedBy=multi-user.target
 EOF
 
-cat <<EOF > /etc/systemd/system/minecraft_server.service
+cat <<EOF > /etc/systemd/system/minecraft_server_monitor.service
 [Unit]
 Description=Monitor Minecraft Server player count
 After=minecraft_server.service
